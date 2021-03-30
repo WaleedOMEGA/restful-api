@@ -16,6 +16,8 @@ var httpServer = http.createServer(function(req,res){
     unifiedServer(req, res);
 });
 
+
+
 // start the http server 
 httpServer.listen(config.httpPort,function(){
     console.log(`this server is listening on port ${config.httpPort}`);
