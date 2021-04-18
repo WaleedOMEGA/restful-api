@@ -5,9 +5,9 @@
  *
  */
 // Dependencies
+const { config } = require('node:process');
 var _data = require('./data');
 var helpers = require('./helpers');
-var config = require('./config');
 // define the handlers
 var handlers = {};
 
@@ -245,9 +245,11 @@ handlers._tokens = {};
 // optional data : none
 handlers._tokens.post = function (data, callback) {
 	var phone =
-		typeof data.payload.phone == 'string' && data.payload.phone.trim().length == 10 ? data.payload.phone.trim() : false;
+		typeof data.payload.phone == 'string' &&
+		data.payload.phone.trim().length == 10 ? data.payload.phone.trim() 	: false;
 	var password =
-		typeof data.payload.password == 'string' &&	data.payload.password.trim().length > 0 ? data.payload.password.trim() : false;
+		typeof data.payload.password == 'string' &&
+		data.payload.password.trim().length > 0 ? data.payload.password.trim() 	: false;
 	if (phone && password) {
 		// lookup the user who matches the phone number
 		_data.read('users', phone, function (err, userData) {
@@ -479,112 +481,6 @@ handlers._checks.post=function(data,callback){
     }else{
         callback(400,{'Error':'Missing required inputs, or inputs are invalid'});
     }
-};
-
-// checks - get
-// required data : id
-// optional data : none
-handlers._checks.get=function(data,callback){
-
-	// check that the id is valid
-	var id = typeof(data.queryStringObject.id)=='string' && data.queryStringObject.id.trim().length==20 ? data.queryStringObject.id:false;
-	if(id){
-
-		// lookup the check
-		_data.read('checks',id,function(err,checkData){
-			if(!err&&checkData){
-				
-				// get the token from the headers
-				var token=typeof(data.headers.token)?data.headers.token:false;
-				// verify that the given token is valid and belongs to the user who created
-		handlers._tokens.verifyToken(token, checkData.userPhone, function (tokenIsValid) {
-			if (tokenIsValid) {
-
-				// return the check data
-				callback(200,checkData);
-			} else {
-				callback(403);
-			}
-		});
-			}else{
-				callback(404);
-			}
-		});
-	}else{
-		callback(400,{'Error':'Missing Required Field'});
-	}
-};
-
-// checks - put
-// required data : id
-// optional data : protocol , url , method,successCodes,timeoutSeconds
-handlers._checks.put=function(data,callback){
-
-	// check for the required field
-	var id = typeof(data.payload.id)=='string' && data.payload.id.trim().length==20 ? data.payload.id:false;
-
-	// check for the optional fields
-	var protocol=typeof(data.payload.protocol)=='string' && ['https','http'].indexOf(data.payload.protocol) > -1 ? data.payload.protocol : false;
-    var url = typeof(data.payload.url)=='string' && data.payload.url.trim().length > 0 ? data.payload.url.trim() : false;
-    var method = typeof(data.payload.method)=='string' && ['post','get','put','delete'].indexOf(data.payload.method) > -1 ? data.payload.method : false;
-    var successCodes=typeof(data.payload.successCodes)=='object' && data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0 ? data.payload.successCodes : false;
-    var timeoutSeconds=typeof(data.payload.timeoutSeconds)=='number' && data.payload.timeoutSeconds % 1 === 0 && data.payload.timeoutSeconds >= 1 && data.payload.timeoutSeconds <= 5 ? data.payload.timeoutSeconds : false;
-    
-	// check to make sure id is valid
-	if(id){
-
-		// check to make sure one or more optional fields has been sent
-		if(protocol || url || method || successCodes || timeoutSeconds){
-			// lookup the check
-			_data.read('checks',id,function(err,checkData){
-				if(!err && checkData){
-					
-					// get the token from the headers
-					var token=typeof(data.headers.token)?data.headers.token:false;
-					// verify that the given token is valid and belongs to the user who created
-					handlers._tokens.verifyToken(token, checkData.userPhone, function (tokenIsValid) {
-						if(tokenIsValid){
-
-							// update the check where necessary
-							if(protocol){
-								checkData.protocol=protocol;
-							}
-							if(url){
-								checkData.url=url;
-							}
-							if(method){
-								checkData.method=method;
-							}
-							if(successCodes){
-								checkData.successCodes=successCodes;
-							}
-							if(timeoutSeconds){
-								checkData.timeoutSeconds=timeoutSeconds;
-							}
-
-							// store the new updates
-							_data.update('checks',id,checkData,function(err){
-								if(!err){
-									callback(200);
-								}else{
-									callback(500,{'Error':'Could not update the check'});
-								}
-							});
-						}else{
-							callback(403);
-						}
-					});
-				}else{
-					callback(400,{'Error':'Check id did not exist'});
-				}
-			});
-
-		}else{
-			callback(400,{'Error':'Missing Fields to update'});
-		}
-	}else{
-		callback(400,{'Error':'Missing Required Fields'});
-	}
 };
 
 // ping handlers
